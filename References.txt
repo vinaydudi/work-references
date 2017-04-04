@@ -1,0 +1,1487 @@
+Connecting to Hadoop Cluster
+=============================
+Connect to 62. 
+From there RDP to 54.89.65.42
+User: local\dfemr
+Password: DigitalFarming2016!
+
+Start “putty” locate on the Desktop
+Choose connection “Magellan”
+Connect
+
+Postgre connection:
+===================
+by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432
+
+QA
+----
+rds-qa-001.df.local 
+by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432
+database: BCS_DF_WEATHERDB_QA	
+user:  WEATHERDB_S_USR_QA	
+u$3r@login
+--username weatheruser --password w28ther!
+
+Prod
+-----
+by-df-rds-pgsql-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com
+database: BCS_DF_WEATHERDB_PROD	
+user:  WEATHERDB_S_USR_PROD	
+prou$er@9!01
+
+weather_historic_hourly
+weather_forecast_hourly
+
+jars list
+=========
+/usr/lib
+
+AWS CLUSTER LOGIN
+=================
+https://842034702001.signin.aws.amazon.com/console/
+username: dfemr
+DigitalFarming2016!
+
+
+Hive table
+=========
+CREATE EXTERNAL TABLE friends(id INT,name STRING, address string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ","
+LOCATION "/poc/hive";
+
+Installing impala:
+======================
+aws emr create-cluster --name="Impala 2.2.0" --ami-version=3.7.0 --applications Name=hive --ec2-attributes KeyName=[KEY_NAME] --instance-groups InstanceGroupType=MASTER,InstanceCount=1,InstanceType=m3.xlarge InstanceGroupType=CORE,InstanceCount=1,InstanceType=m3.xlarge --bootstrap-action Name="Install Impala2",Path="s3://support.elasticmapreduce/bootstrap-actions/impala/impala-install"
+
+
+sqoop cluster
+===============
+aws emr create-cluster --applications Name=Hadoop Name=Hive Name=Hue Name=Sqoop-Sandbox --tags 'Purpose=Sqoop-Blog' --ec2-attributes '{"KeyName":"your-key","InstanceProfile":"EMR_EC2_DefaultRole"}' --service-role EMR_DefaultRole --enable-debugging --release-label emr-4.5.0 --log-uri 's3://your-bucket/logs' --name 'Sqoop-Demo' --instance-groups '[{"InstanceCount":1,"InstanceGroupType":"MASTER","InstanceType":"m3.xlarge","Name":"Master instance group - 1"},{"InstanceCount":2,"InstanceGroupType":"CORE","InstanceType":"m3.xlarge","Name":"Core instance group - 2"}]' --region us-west-2
+
+
+connecting to sqoop:
+=====================
+sqoop list-tables --connect jdbc:mysql://db-instance-endpoint/yourdatabase --username your-username -P
+
+postgre connection db url
+-------------------------------
+filtered.database.url = jdbc:postgresql://by-df-rds-pgsql-002.ceasaoaqftxu.eu-central-1.rds.amazonaws.com/BCS_DF_TEST?autoReconnect=true&characterSetResults=UTF-8&characterEncoding=UTF8&stringtype=unspecified
+filtered.database.username = postgres
+filtered.database.password = li28tan! 
+
+jdbc:postgresql://rds-qa-001.df.local/BCS_DF_WEATHERDB2_QA?autoReconnect=true&characterSetResults=UTF-8&characterEncoding=UTF8&stringtype=unspecified
+
+sqoop list-tables --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA --username WEATHERDB_S_USR_QA --password u$3r@login 
+
+QA:
+----
+hadoop fs -rm -r -skipTrash /poc/hive/weatherdata/model_location_xref
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --query 'SELECT * FROM df_rule_processor.model_location_xref where $CONDITIONS' --target-dir /poc/hive/weatherdata/model_location_xref -m 1 --fields-terminated-by '\001'
+
+hadoop fs -rm -r -skipTrash /poc/hive/weatherdata/model_country_xref 
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --query 'SELECT * FROM df_rule_processor.model_country_xref where $CONDITIONS' --target-dir /poc/hive/weatherdata/model_country_xref -m 1 --fields-terminated-by '\001'
+
+df_rule_processor.model_country_xref 
+
+sqoop list-tables --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA --username weatheruser --password w28ther!
+
+sqoop eval --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA --query "SELECT * FROM df_rule_processor.model_master" --username weatheruser --password w28ther!
+
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --query 'SELECT * FROM df_rule_processor.model_master where $CONDITIONS' --target-dir /poc/sqoop/weatherdata/model_master -m 1
+
+sqoop eval --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA --query "SELECT count(*) FROM weather_forecast_hourly" --username weatheruser --password w28ther!
+
+hadoop fs -rm -r -skipTrash /poc/hive/weatherdata/weather_forecast_hourly
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --query 'SELECT * FROM weather_forecast_hourly where $CONDITIONS' --target-dir /poc/hive/weatherdata/weather_forecast_hourly --split-by location_id
+
+
+hadoop fs -rm -r -skipTrash /poc/hive/weatherdata/weather_historic_hourly 
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --query 'SELECT * FROM weather_historic_hourly where $CONDITIONS' --target-dir /poc/hive/weatherdata/weather_historic_hourly --split-by location_id
+
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --query 'SELECT * FROM waggregated_hourly where $CONDITIONS' --target-dir /poc/hive/weatherdata/waggregated_hourly --split-by location_id
+
+
+
+****************************************
+Daily QA
+************************************
+hadoop fs -rm -r -skipTrash /poc/hive/weatherdata/location
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --query 'SELECT * FROM location where $CONDITIONS' --target-dir /poc/hive/weatherdata/location -m 1 --map-column-java source_uuid=String --fields-terminated-by '\001'
+
+hadoop fs -rm -r -skipTrash /poc/hive/weatherdata/waggregated_daily
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --query 'SELECT * FROM waggregated_daily where $CONDITIONS' --target-dir /poc/hive/weatherdata/waggregated_daily -m 1 --fields-terminated-by '\001'
+
+hadoop fs -rm -r -skipTrash /poc/hive/weatherdata/weather_forecast_daily
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --query 'SELECT * FROM weather_forecast_daily where $CONDITIONS' --target-dir /poc/hive/weatherdata/weather_forecast_daily -m 1 --fields-terminated-by '\001'
+
+
+hadoop fs -rm -r -skipTrash /poc/hive/weatherdata/weather_historic_daily 
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --query 'SELECT * FROM weather_historic_daily where $CONDITIONS' --target-dir /poc/hive/weatherdata/weather_historic_daily -m 1 --fields-terminated-by '\001'
+*****************************************
+
+
+Daily PROD
+****************
+hadoop fs -rm -r -skipTrash /poc/hive/weatherdata/location
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_PROD  --username weatheruser --password w28ther! --query 'SELECT * FROM location where $CONDITIONS' --target-dir /poc/hive/weatherdata/location -m 1 --fields-terminated-by '\001' --map-column-java source_uuid=String --fields-terminated-by '\001'
+
+hadoop fs -rm -r -skipTrash /poc/hive/weatherdata/waggregated_daily
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_PROD  --username weatheruser --password w28ther! --query 'SELECT * FROM waggregated_daily where $CONDITIONS' --target-dir /poc/hive/weatherdata/waggregated_daily -m 1 --fields-terminated-by '\001'
+
+hadoop fs -rm -r -skipTrash /poc/hive/weatherdata/weather_forecast_daily
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_PROD  --username weatheruser --password w28ther! --query 'SELECT * FROM weather_forecast_daily where $CONDITIONS' --target-dir /poc/hive/weatherdata/weather_forecast_daily -m 1 --fields-terminated-by '\001'
+
+
+hadoop fs -rm -r -skipTrash /poc/hive/weatherdata/weather_historic_daily 
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_PROD  --username weatheruser --password w28ther! --query 'SELECT * FROM weather_historic_daily where $CONDITIONS' --target-dir /poc/hive/weatherdata/weather_historic_daily -m 1 --fields-terminated-by '\001'
+**********************
+
+Hourly
+*********************************************************************
+hadoop fs -rm -r -skipTrash /poc/hive/weatherdata/waggregated_hourly
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --query 'SELECT * FROM waggregated_hourly where $CONDITIONS' --target-dir /poc/hive/weatherdata/waggregated_hourly -m 1 --fields-terminated-by '\001'
+
+
+hadoop fs -rm -r -skipTrash /poc/hive/weatherdata/weather_forecast_hourly
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --query 'SELECT * FROM weather_forecast_hourly where $CONDITIONS' --target-dir /poc/hive/weatherdata/weather_forecast_hourly -m 1 --fields-terminated-by '\001'
+
+
+hadoop fs -rm -r -skipTrash /poc/hive/weatherdata/weather_historic_hourly
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --query 'SELECT * FROM weather_historic_hourly where $CONDITIONS' --target-dir /poc/hive/weatherdata/weather_historic_hourly -m 1 --fields-terminated-by '\001'
+*****************************************************************************************
+ 
+
+
+
+
+
+
+
+
+
+
+****************************************************************
+
+hadoop fs -rm -r -skipTrash /poc/hive/weatherdata/weather_historic_daily_temp
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --query 'SELECT * FROM weather_historic_daily where $CONDITIONS limit 20' --target-dir /poc/hive/weatherdata/weather_historic_daily_temp --m 1 --fields-terminated-by '\001'
+
+
+
+Prod:
+-----
+sqoop list-tables --connect jdbc:postgresql://by-df-rds-pgsql-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_PROD --username weatheruser --password w28ther!
+
+
+rds-qa-001.df.local        
+w28ther!
+
+jdbc:postgresql://host:port/database
+
+u$3r@login
+
+Postgre queries
+===================
+to check table size:
+SELECT pg_size_pretty( pg_total_relation_size('weather_forecast_hourly'));
+16 GB
+
+
+SELECT pg_size_pretty(pg_database_size('BCS_DF_WEATHERDB_QA'));
+168 GB
+
+============
+aws emr describe-cluster --cluster-id j-GLXJ5XVARYYD
+
+hdfs dfsadmin -report
+
+hadoop jar wordcount.jar WordCount /poc/mapreduce/input /poc/mapreduce/result
+
+hadoop fs -ls /poc/spark/sample/sparkresult
+
+
+Creating hive weather table
+========================================================
+create database weatherdata LOCATION "/poc/hive/weatherdata";
+create database weatherdata_huge LOCATION "/poc/hive/weatherdata_huge";
+create database weatherdata_part_rv LOCATION "/poc/hive/weatherdata_part_rv";
+
+create database weatherdata_part_nrv LOCATION "/poc/hive/weatherdata_part_nrv";
+
+
+create database dummy LOCATION "/poc/hive/dummy";
+
+CREATE EXTERNAL TABLE `friends`(
+  `id` int,
+  `name` string,
+  `address` string)
+ROW FORMAT SERDE
+  'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
+WITH SERDEPROPERTIES (
+  'field.delim'=',',
+  'serialization.format'=',')
+STORED AS INPUTFORMAT
+  'org.apache.hadoop.mapred.TextInputFormat'
+OUTPUTFORMAT
+  'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+LOCATION
+  'hdfs://ip-172-31-16-177.ec2.internal:8020/poc/hive/dummy/friends';
+
+
+CREATE EXTERNAL TABLE weather_forecast_hourly
+(
+  provider_id bigint,
+  location_id bigint,
+  object_id string,
+  object_type string,
+  date_from timestamp,
+  date_to timestamp,
+  loaddate timestamp,
+  air_temp_c double,
+  rel_humidity_pct double,
+  wind_speed_ms double,
+  wind_dir_deg double,
+  precipitation_mm double,
+  precip_prob_pct double,
+  solar_radiation_wm2 double,
+  weather_desc_code double,
+  datatype string,
+  dew_point_c double
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ","
+LOCATION "/poc/hive/weatherdata/weather_forecast_hourly";
+--------------------------------------------------------------
+CREATE EXTERNAL TABLE weather_historic_hourly
+(
+  provider_id bigint,
+  location_id bigint,
+  object_id string,
+  object_type string,
+  date_from timestamp,
+  date_to timestamp,
+  loaddate timestamp,
+  air_temp_c double,
+  rel_humidity_pct double,
+  wind_speed_ms double,
+  wind_dir_deg double,
+  precipitation_mm double,
+  precip_prob_pct double,
+  solar_radiation_wm2 double,
+  weather_desc_code double,
+  datatype string,
+  dew_point_c double
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ","
+LOCATION "/poc/hive/weatherdata/weather_historic_hourly";
+
+
+CREATE TABLE weather_forecast_daily
+(
+  provider_id bigint,
+  location_id bigint,
+  object_id string,
+  object_type string,
+  date_from timestamp,
+  date_to timestamp,
+  loaddate timestamp,
+  air_temp_max_c double,
+  air_temp_min_c double,
+  wind_speed_max_ms double,
+  wind_speed_min_ms double,
+  precipitation_mm double,
+  precip_prob_pct double,
+  weather_desc_code double,
+  datatype string
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ","
+LOCATION "/poc/hive/weatherdata/weather_forecast_daily";
+
+
+CREATE TABLE weather_historic_daily
+(
+  provider_id bigint,
+  location_id bigint,
+  object_id string,
+  object_type string,
+  date_from timestamp,
+  date_to timestamp,
+  loaddate timestamp,
+  air_temp_max_c double,
+  air_temp_min_c double,
+  wind_speed_max_ms double,
+  wind_speed_min_ms double,
+  precipitation_mm double,
+  precip_prob_pct double,
+  weather_desc_code double,
+  datatype string
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ","
+LOCATION "/poc/hive/weatherdata/weather_historic_daily";
+
+CREATE TABLE waggregated_daily
+(
+  provider_id bigint,
+  location_id bigint,
+  object_id string,
+  object_type string,
+  date_from timestamp,
+  date_to timestamp,
+  loaddate timestamp,
+  air_temp_avg_night_c double,
+  lwd_1212_h double,
+  aws_1212_pct double,
+  rel_humidity_avg_night_pct double,
+  solar_radiation_wm2 double,
+  datatype string
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ","
+LOCATION "/poc/hive/weatherdata/waggregated_daily";
+
+CREATE VIEW vw_weather_hourly AS 
+ SELECT weather_historic_hourly.provider_id,
+    weather_historic_hourly.location_id,
+    weather_historic_hourly.object_id,
+    weather_historic_hourly.object_type,
+    weather_historic_hourly.date_from,
+    weather_historic_hourly.date_to,
+    weather_historic_hourly.loaddate,
+    weather_historic_hourly.air_temp_c,
+    weather_historic_hourly.rel_humidity_pct,
+    weather_historic_hourly.wind_speed_ms,
+    weather_historic_hourly.wind_dir_deg,
+    weather_historic_hourly.precipitation_mm,
+    weather_historic_hourly.precip_prob_pct,
+    weather_historic_hourly.solar_radiation_wm2,
+    weather_historic_hourly.weather_desc_code,
+    weather_historic_hourly.datatype,
+    weather_historic_hourly.dew_point_c
+   FROM weather_historic_hourly
+UNION
+ SELECT weather_forecast_hourly.provider_id,
+    weather_forecast_hourly.location_id,
+    weather_forecast_hourly.object_id,
+    weather_forecast_hourly.object_type,
+    weather_forecast_hourly.date_from,
+    weather_forecast_hourly.date_to,
+    weather_forecast_hourly.loaddate,
+    weather_forecast_hourly.air_temp_c,
+    weather_forecast_hourly.rel_humidity_pct,
+    weather_forecast_hourly.wind_speed_ms,
+    weather_forecast_hourly.wind_dir_deg,
+    weather_forecast_hourly.precipitation_mm,
+    weather_forecast_hourly.precip_prob_pct,
+    weather_forecast_hourly.solar_radiation_wm2,
+    weather_forecast_hourly.weather_desc_code,
+    weather_forecast_hourly.datatype,
+    weather_forecast_hourly.dew_point_c
+   FROM weather_forecast_hourly;
+
+   
+CREATE  VIEW vw_weather_daily AS 
+ SELECT weather_historic_daily.provider_id,
+    weather_historic_daily.location_id,
+    weather_historic_daily.object_id,
+    weather_historic_daily.object_type,
+    weather_historic_daily.date_from,
+    weather_historic_daily.date_to,
+    weather_historic_daily.loaddate,
+    weather_historic_daily.air_temp_max_c,
+    weather_historic_daily.air_temp_min_c,
+    weather_historic_daily.wind_speed_max_ms,
+    weather_historic_daily.wind_speed_min_ms,
+    weather_historic_daily.precipitation_mm,
+    weather_historic_daily.precip_prob_pct,
+    weather_historic_daily.weather_desc_code,
+    weather_historic_daily.datatype
+   FROM weather_historic_daily
+UNION
+ SELECT weather_forecast_daily.provider_id,
+    weather_forecast_daily.location_id,
+    weather_forecast_daily.object_id,
+    weather_forecast_daily.object_type,
+    weather_forecast_daily.date_from,
+    weather_forecast_daily.date_to,
+    weather_forecast_daily.loaddate,
+    weather_forecast_daily.air_temp_max_c,
+    weather_forecast_daily.air_temp_min_c,
+    weather_forecast_daily.wind_speed_max_ms,
+    weather_forecast_daily.wind_speed_min_ms,
+    weather_forecast_daily.precipitation_mm,
+    weather_forecast_daily.precip_prob_pct,
+    weather_forecast_daily.weather_desc_code,
+    weather_forecast_daily.datatype
+   FROM weather_forecast_daily;
+
+CREATE EXTERNAL TABLE location
+(
+  id bigint,
+  longitude double,
+  latitude double,
+  name string,
+  description string,
+  country_id string,
+  purpose string,
+  source string,
+  source_id string,
+  object_type string,
+  load_interval_h int
+)
+LOCATION "/poc/hive/weatherdata/location";
+
+//default delimiter in hive \001
+
+CREATE VIEW mv_locations as SELECT DISTINCT location.id AS location_id,
+    location.country_id,
+    location.source_id,
+    location.object_type
+   FROM location
+WHERE UPPER(location.purpose) = 'DF BETA TEST'
+ORDER BY location.id;
+-------------------------
+CREATE VIEW mv_weather_daily_data AS 
+SELECT COALESCE(non_agg_data.location_id, agg_data.location_id) AS location_id,
+    COALESCE(non_agg_data.object_id, agg_data.object_id) AS object_id,
+    COALESCE(non_agg_data.object_type, agg_data.object_id) AS object_type,
+    COALESCE(non_agg_data.date_from, agg_data.date_from) AS record_date,
+    agg_data.air_temp_avg_night_c,
+    agg_data.lwd_1212_h,
+    agg_data.aws_1212_pct,
+    agg_data.rel_humidity_avg_night_pct,
+    agg_data.solar_radiation_wm2,
+    non_agg_data.air_temp_max_c,
+    non_agg_data.air_temp_min_c,
+    non_agg_data.wind_speed_max_ms,
+    non_agg_data.wind_speed_min_ms,
+    non_agg_data.precipitation_mm,
+    non_agg_data.precip_prob_pct,
+    non_agg_data.weather_desc_code
+from (SELECT vd.provider_id,
+            vd.location_id,
+            vd.object_id,
+            vd.object_type,
+            vd.date_from,
+            vd.date_to,
+            vd.loaddate,
+            vd.air_temp_max_c,
+            vd.air_temp_min_c,
+            vd.wind_speed_max_ms,
+            vd.wind_speed_min_ms,
+            vd.precipitation_mm,
+            vd.precip_prob_pct,
+            vd.weather_desc_code,
+            vd.datatype
+           FROM vw_weather_daily as vd
+          WHERE (EXISTS ( SELECT 1
+                   FROM mv_locations as mv
+                  WHERE vd.location_id = mv.location_id)) AND vd.date_from >= date_sub(current_date, 15) AND (vd.provider_id = 4 or vd.provider_id = 5)) as non_agg_data
+FULL OUTER JOIN
+(SELECT vd.provider_id,
+            vd.location_id,
+            vd.object_id,
+            vd.object_type,
+            vd.date_from,
+            vd.date_to,
+            vd.loaddate,
+            vd.air_temp_avg_night_c,
+            vd.lwd_1212_h,
+            vd.aws_1212_pct,
+            vd.rel_humidity_avg_night_pct,
+            vd.solar_radiation_wm2,
+            vd.datatype
+           FROM waggregated_daily as vd
+          WHERE (EXISTS ( SELECT 1
+                   FROM mv_locations as mv
+                  WHERE vd.location_id = mv.location_id)) AND vd.date_from >= date_sub(current_date, 7) AND (vd.provider_id = 4 or vd.provider_id = 5)) as agg_data 
+ON non_agg_data.location_id = agg_data.location_id AND non_agg_data.date_from = agg_data.date_from;
+
+-----------------------------------
+
+
+  
+
+select address,count(address) from friends group by address;
+
+for loop:
+----------
+
+for i in {2..1000}
+do
+    echo "1,vinay,nellore" >> hiveInput.txt
+    i=$i+1
+done
+
+
+spark wordcount
+----------------
+import org.apache.spark._
+import org.apache.spark.SparkContext._
+import org.apache.commons.io.FileUtils
+import org.apache.hadoop.fs.FileSystem
+import java.net.URI
+import org.apache.hadoop.fs.Path
+import org.apache.commons.io.filefilter.WildcardFileFilter
+object WordCount {
+    def main(args: Array[String]) {
+      val inputFile = args(0)
+      val outputFile = args(1)
+      val conf = new SparkConf().setAppName("wordCount")
+      // Create a Scala Spark Context.
+      val sc = new SparkContext(conf)
+      // Load our input data.
+      val input =  sc.textFile(inputFile)
+      // Split up into words.
+      val words = input.flatMap(line => line.split(" "))
+      // Transform into word and count.
+      val counts = words.map(word => (word, 1)).reduceByKey{case (x, y) => x + y}
+      // Save the word count back out to a text file, causing evaluation.
+     // pair_result.coalesce(1)
+      
+ val fs:FileSystem = FileSystem.get(new URI(outputFile), sc.hadoopConfiguration);
+fs.delete(new Path(outputFile), true) // true for recursive
+      println("output file deleted********999999999********")
+     counts.repartition(1).saveAsTextFile(outputFile)
+    }
+}
+
+running spark jar
+-------------------
+./bin/spark-submit --class org.apache.spark.examples.SparkPi --master local[8] /path/to/examples.jar
+spark-submit --class <classname> --master yarn <local unix path of jar>
+
+spark-submit --class WordCount --master yarn scalatest-0.0.1-SNAPSHOT.jar
+
+spark-submit --class WordCount --master yarn scalatest-0.0.1-SNAPSHOT.jar /poc/spark/sample/input/friends /poc/spark/sample/sparkresult
+
+spark-submit --class SparkHive --master yarn sparkhive-0.0.1-SNAPSHOT.jar /poc/spark/sample/input/friends /poc/spark/sample/sparkresult
+
+
+spark-submit --class SparkDF --master yarn sparkdf-0.0.1-SNAPSHOT.jar /poc/hive/weatherdata/weather_forecast_hourly /poc/spark/sample/results
+
+spark-submit --class SparkDFProps --master yarn /home/hadoop/jars/sparksql-0.0.1-SNAPSHOT.jar
+
+spark-submit --class SparkHive --master yarn /home/hadoop/jars/sparksql-0.0.1-SNAPSHOT.jar
+
+spark-submit --class SparkDFProps --master yarn /home/hadoop/jars/sparksql-0.0.1-SNAPSHOT.jar
+
+
+spark dataframe
+----------------------
+val friendsDF = sc.textFile("/poc/spark/sample/input/friends").map(_.split(",")).map(attributes => Friends(attributes(0), attributes(1),attributes(2))).toDF()
+
+val df = spark.read.csv("/poc/spark/sample/input/friends/hiveInput.txt")
+val newNames = Seq("id", "name", "address")
+val frinedsDFR = df.toDF(newNames: _*)
+frinedsDFR.createOrReplaceTempView("friends")
+val addressCount=spark.sql("select address,count(address) from friends group by address")
+#frinedsDFR.printSchema
+#frinedsDFR.show()
+
+weather data
+-----------------
+val weatherDF = sc.textFile("/poc/hive/weatherdata/weather_forecast_hourly").map(_.split(",")).map(attributes => Friends(attributes(0), attributes(1),attributes(2))).toDF()
+
+val weatherFile = spark.read.csv("/poc/hive/weatherdata/weather_forecast_hourly")
+val weatherColNames = Seq("provider_id", "location_id", "object_id","object_type", "date_from", "date_to","loaddate", "air_temp_c", "rel_humidity_pct","wind_speed_ms", "wind_dir_deg", "precipitation_mm","precip_prob_pct", "solar_radiation_wm2", "weather_desc_code","datatype","dew_point_c")
+val weatherDF = weatherFile.toDF(weatherColNames: _*)
+weatherDF.createOrReplaceTempView("weather_forecast_hourly")
+val queryResult=spark.sql("select count(*) from (select x.* from (select *,to_date(loaddate) as ldate from weather_forecast_hourly )x where x.ldate in ('2016-12-01'))x")
+queryResult.show()
+
+hive queries
+=======================
+select x.* from (select *,to_date(loaddate) as ldate from weather_forecast_hourly )x where x.ldate in ('2016-12-01')
+
+
+select count(*) from (select x.* from (select *,to_date(loaddate) as ldate from weather_forecast_hourly )x where x.ldate in ('2016-12-01'))x
+
+
+spark sql hive
+--------------------
+import org.apache.spark.SparkConf
+import org.apache.spark.SparkContext
+import org.apache.hadoop.fs.FileSystem
+import java.net.URI
+import org.apache.hadoop.fs.Path
+import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark._
+
+object SparkHive {
+  def main(args: Array[String]): Unit = {
+    val conf = new SparkConf().setAppName("wordCount")
+      // Create a Scala Spark Context.
+      val sc = new SparkContext(conf)
+
+var outputFileLocation : String = "/poc/spark/sample/results"
+val sqlContext = new HiveContext(sc)
+val resultData=sqlContext.sql("select * from weatherdata_part_rv.model_location_xref limit 10")
+
+val fs:FileSystem = FileSystem.get(new URI(outputFileLocation), sc.hadoopConfiguration);
+fs.delete(new Path(outputFileLocation), true)
+resultData.write.format("com.databricks.spark.csv").save(outputFileLocation)
+  }
+}
+
+
+spark sql dataframe
+--------------------------
+
+import org.apache.spark.SparkConf
+import org.apache.spark.SparkContext
+import org.apache.hadoop.fs.FileSystem
+import java.net.URI
+import org.apache.hadoop.fs.Path
+import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark._
+
+
+object SparkDF {
+  def main(args: Array[String]): Unit = {
+        val conf = new SparkConf().setAppName("wordCount")
+      // Create a Scala Spark Context.
+      val sc = new SparkContext(conf)
+              val inputLocation=args(0)
+     val outputFileLocation=args(1)
+val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+val weatherFile = sqlContext.read.format("com.databricks.spark.csv").load(inputLocation)
+val weatherColNames = Seq("provider_id", "location_id", "object_id","object_type", "date_from", "date_to","loaddate", "air_temp_c", "rel_humidity_pct","wind_speed_ms", "wind_dir_deg", "precipitation_mm","precip_prob_pct", "solar_radiation_wm2", "weather_desc_code","datatype","dew_point_c")
+val weatherDF = weatherFile.toDF(weatherColNames: _*)
+weatherDF.createOrReplaceTempView("weather_forecast_hourly")	
+val queryResult=sqlContext.sql("select count(*) from weather_forecast_hourly")
+val fs:FileSystem = FileSystem.get(new URI(outputFileLocation), sc.hadoopConfiguration);
+fs.delete(new Path(outputFileLocation), true)
+queryResult.write.format("com.databricks.spark.csv").save(outputFileLocation)
+  }
+}
+
+
+spark sqldf
+-------------- 
+import org.apache.spark.SparkConf
+import org.apache.spark.SparkContext
+import org.apache.hadoop.fs.FileSystem
+import java.net.URI
+import org.apache.hadoop.fs.Path
+import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark._
+import java.util.Properties
+import java.io.FileInputStream
+ properties.load(new FileInputStream("/home/hadoop/properties/load.properties"))
+      val inputLocation=properties.getProperty("inputPath")
+     val outputFileLocation=properties.getProperty("outputPath")
+	 val query=properties.getProperty("query")
+      val tableName=properties.getProperty("tableName")
+val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+val weatherFile = sqlContext.read.format("com.databricks.spark.csv").load(inputLocation)
+val weatherColNames = Seq("provider_id", "location_id", "object_id","object_type", "date_from", "date_to","loaddate", "air_temp_c", "rel_humidity_pct","wind_speed_ms", "wind_dir_deg", "precipitation_mm","precip_prob_pct", "solar_radiation_wm2", "weather_desc_code","datatype","dew_point_c")
+val weatherDF = weatherFile.toDF(weatherColNames: _*)
+weatherDF.createOrReplaceTempView(tableName)
+resultData.collect.foreach(println)
+
+
+
+spark sql hive
+------------
+import org.apache.spark.SparkConf
+import org.apache.spark.SparkContext
+import org.apache.hadoop.fs.FileSystem
+import java.net.URI
+import org.apache.hadoop.fs.Path
+import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark._
+import java.util.Properties
+import java.io.FileInputStream
+ val properties = new Properties
+     properties.load(new FileInputStream("/home/hadoop/properties/load.properties"))
+     val outputFileLocationHive=properties.getProperty("outputPathHive")
+     val queryHive=properties.getProperty("queryHive")
+      val tableName=properties.getProperty("tableName")
+     println(queryHive)
+     println(outputFileLocationHive)
+val sqlContext = new HiveContext(sc)
+val resultData=sqlContext.sql(queryHive)
+resultData.collect.foreach(println)
+
+
+
+tasks
+-------
+1. Huge query analysis -- current week
+
+2. Iterative query ananlysis -- next weeek
+
+Expressions
+--------------
+Classified according the range of severity estimated:
+Very Favorable:           higher than 25,00% 
+Favorable:                    13,00% to 25,00%
+Less Favorable:            00,01% to 13,00%
+Unfavorable:                00,00%
+
+
+postgre asian rust:
+-----
+avg(air_temp_avg_night_c) betweem 15 and 27
+lwd_1212_h > 6
+54,701 * (1,6546 * exp(-6,84246 * (((NightTemp – 19,4871) / 24,6295)^2 + ((LWD – 20,9021) / 42,1387)^2))) -11,763
+select 54.701 * (1.6546 * exp(-6.84246 * (((100 - 19.4871) / 24.6295)^2 + ((100 - 20.9021) / 42.1387)^2))) -11.763 from location limit 10
+
+select 54.701 * (1.6546 * exp(-6.84246 * (((23.275 - 19.4871) / 24.6295)^2 + ((7.0 - 20.9021) / 42.1387)^2))) -11.763 from location limit 10
+
+54,701 * (1,6546 * exp(-6,84246 * (((NightTemp – 19,4871) / 24,6295)^2 + ((LWD – 20,9021) / 42,1387)^2))) -11,763
+
+54.701 * (1.6546 * exp(-6.84246 * (((air_temp_avg_night_c - 19.4871) / 24.6295)^2 + ((lwd_1212_h - 20.9021) / 42.1387)^2))) -11.763
+
+select "aa" from location where 24.793031847487818 >= 25 
+
+hive asian rust:
+-----
+avg(air_temp_avg_night_c) betweem 15 and 27
+lwd_1212_h > 6
+54,701 * (1,6546 * exp(-6,84246 * (((NightTemp – 19,4871) / 24,6295)^2 + ((LWD – 20,9021) / 42,1387)^2))) -11,763
+select 54.701 * (1.6546 * exp(-6.84246 * (pow(((100 - 19.4871) / 24.6295),2) + pow(((100 - 20.9021) / 42.1387),2)))) -11.763 from location limit 10;
+
+
+select air_temp_avg_night_c from mv_weather_daily_data group by location_id having avg(air_temp_avg_night_c) > 25;
+
+
+CASE
+       WHEN Fruit = 'APPLE' THEN 'The owner is APPLE'
+       WHEN Fruit = 'ORANGE' THEN 'The owner is ORANGE'
+       ELSE 'It is another Fruit'
+
+END
+
+
+
+select CASE 
+       WHEN expresult > 25 THEN 'Very Favorable'
+       WHEN expresult between 13 and 25 THEN 'Favorable'
+	   WHEN expresult between 1 and 13 THEN 'Less Favorable'
+       ELSE 'Unfavorable' 
+	   END as finalresult
+from (
+select x.location_id as locid,x.recdate as recdate,54.701 * (1.6546 * exp(-6.84246 * (pow(((x.air_temp_avg_night_c - 19.4871) / 24.6295),2) + pow(((x.lwd_1212_h - 20.9021) / 42.1387),2)))) -11.763 as expresult from 
+(select location_id,to_date(record_date) as recdate,air_temp_avg_night_c,lwd_1212_h  from mv_weather_daily_data where air_temp_avg_night_c between 15 and 27 and lwd_1212_h > 6)x limit 10)y;
+
+
+select y.locid,y.recdate, CASE 
+WHEN expresult > 25 THEN 'Very Favorable'
+WHEN expresult >=13 and expresult <= 25 THEN 'Favorable'
+WHEN expresult >=1 and expresult <= 13 THEN 'Less Favorable'
+ELSE 'Unfavorable' 
+END as finalresult
+from (
+select x.location_id as locid,x.recdate as recdate,54.701 * (1.6546 * exp(-6.84246 * (pow(((x.air_temp_avg_night_c - 19.4871) / 24.6295),2) + pow(((x.lwd_1212_h - 20.9021) / 42.1387),2)))) -11.763 as expresult from 
+(select location_id,to_date(record_date) as recdate,air_temp_avg_night_c,lwd_1212_h  from mv_weather_daily_data where (air_temp_avg_night_c >= 15 and air_temp_avg_night_c <= 27) and lwd_1212_h > 6)x)y;
+
+*******************************************************
+model 2 final prediction query hive:
+********************************************
+
+"Classified according the range of severity estimated:
+Very Favorable:           higher than 25,00% 
+Favorable:                    13,00% to 25,00%
+Less Favorable:            00,01% to 13,00%
+Unfavorable:                00,00%"											
+"Percentage of Severity estimated for each day according the equation: 
+AR_Severity = 54,701 * (1,6546 * exp(-6,84246 * (((NightTemp – 19,4871) / 24,6295)^2 + ((LWD – 20,9021) / 42,1387)^2))) -11,763
+
+This estimation just must be calculated when the Average Night Temperature (NightTemp) among 15,0 oC to 27,0 oC combined with at least 6 hours of Leaf Weatness Duration (LWD)"											
+
+
+
+=======================================================================================
+Model 2:
+-----------
+select y.locid,y.recdate, CASE 
+when expresult ='Unfavorable' then 'Unfavorable' 
+WHEN expresult > 25 THEN 'Very Favorable'
+WHEN expresult >=13 and expresult <= 25 THEN 'Favorable'
+WHEN expresult >=1 and expresult <= 13 THEN 'Less Favorable'
+ELSE 'Unfavorable' 
+END as finalresult
+from
+(
+select x.location_id as locid,x.recdate as recdate,case when x.air_temp_avg_night_c='Unfavorable' then 'Unfavorable' else 54.701 * (1.6546 * exp(-6.84246 * (pow(((x.air_temp_avg_night_c - 19.4871) / 24.6295),2) + pow(((x.lwd_1212_h - 20.9021) / 42.1387),2)))) -11.763 end as expresult from
+(select location_id,to_date(record_date) as recdate,
+case
+when (air_temp_avg_night_c >= 15 and air_temp_avg_night_c <= 27) and lwd_1212_h >= 6 then air_temp_avg_night_c
+else 'Unfavorable'
+END as air_temp_avg_night_c,lwd_1212_h from mv_weather_daily_data)x
+)y;
+
+Model 3:
+--------
+"Classified according the range of severity estimated:
+Very Favorable:           higher than 50,00% 
+Favorable:                    20,00% to 50,00%
+Less Favorable:            00,01% to 20,00%
+Unfavorable:                00,00%"											
+"Percentage of Severity estimated for each day according the equation: 
+PM_Severity =  54,5327 * exp(-2,86394 * (((NightTemp – 23,1927) / 9,03343)^2+((LWD – 8,24455)/ 14,5439)^2))
+
+This estimation just must be calculated when the Average Night Temperature (NightTemp) among 14,0 oC to 28,0 oC and Average Night Relative Umidity (NightUR) among 50,0% to 90,0% occurring for two consecutive days (current day + 1 previous day) combined with amount of Leaf Weatness Duration (LWD) among 2 to 24 hours accumulated from these two consecutive days "											
+
+
+select y.locid,y.recdate, CASE 
+when expresult ='Unfavorable' then 'Unfavorable' 
+WHEN expresult > 25 THEN 'Very Favorable'
+WHEN expresult >=13 and expresult <= 25 THEN 'Favorable'
+WHEN expresult >=1 and expresult <= 13 THEN 'Less Favorable'
+ELSE 'Unfavorable' 
+END as finalresult
+from
+(
+select x.location_id as locid,x.recdate as recdate,case when x.air_temp_avg_night_c='Unfavorable' then 'Unfavorable' else 54.701 * (1.6546 * exp(-6.84246 * (pow(((x.air_temp_avg_night_c - 19.4871) / 24.6295),2) + pow(((x.lwd_1212_h - 20.9021) / 42.1387),2)))) -11.763 end as expresult from
+(select location_id,to_date(record_date) as recdate,
+case
+when (air_temp_avg_night_c >= 15 and air_temp_avg_night_c <= 27) and lwd_1212_h >= 6 then air_temp_avg_night_c
+else 'Unfavorable'
+END as air_temp_avg_night_c,lwd_1212_h from mv_weather_daily_data)x
+)y;
+
+select avg(air_temp_avg_night_c) as avg_air_temp_avg_night_c,avg(rel_humidity_avg_night_pct) as avg_rel_humidity_avg_night_pct,sum(lwd_1212_h) from mv_weather_daily_data where to_date(record_date) >= date_sub(to_date(record_date), 1) and to_date(record_date) <= to_date(record_date);
+
+select to_date(record_date),air_temp_avg_night_c,rel_humidity_avg_night_pct,lwd_1212_h from mv_weather_daily_data where to_date(record_date) >= date_sub(to_date('2016-12-12'), 1) and to_date(record_date) <= to_date('2016-12-12') limit 20;
+
+
+---
+
+select x.location_id,x.recdate,
+case
+when (avg_air_temp_avg_night_c >= 14 and avg_air_temp_avg_night_c <= 28) and (avg_rel_humidity_avg_night_pct >= 50 and avg_rel_humidity_avg_night_pct <= 90) and (sum_lwd_1212_h >= 2 and sum_lwd_1212_h<=24) then avg_air_temp_avg_night_c
+else 'Unfavorable'
+END as avg_air_temp_avg_night_c,lwd_1212_h from
+(
+select location_id,"2016-12-12" as recdate,avg(air_temp_avg_night_c) as avg_air_temp_avg_night_c,avg(rel_humidity_avg_night_pct) as avg_rel_humidity_avg_night_pct,sum(lwd_1212_h) as sum_lwd_1212_h from mv_weather_daily_data where to_date(record_date) >= date_sub(to_date('2016-12-12'), 1) and to_date(record_date) <= to_date('2016-12-12') group by location_id
+)x
+--
+
+
+
+select x.location_id,avg(x.air_temp_avg_night_c) as avg_air_temp_avg_night_c,avg(x.rel_humidity_avg_night_pct) as avg_rel_humidity_avg_night_pct,sum(x.lwd_1212_h)
+from(
+select location_id,to_date(record_date),date_sub(to_date(record_date), 1),air_temp_avg_night_c,rel_humidity_avg_night_pct,lwd_1212_h from mv_weather_daily_data where to_date(record_date) >= date_sub(to_date(record_date), 1) and to_date(record_date) <= to_date(record_date)
+)x group by x.location_id;
+============================================================================================
+
+***********************************************************************************************************
+select y.locid,y.recdate, CASE 
+when expresult ='Unfavorable' then 'Unfavorable' 
+WHEN expresult > 25 THEN 'Very Favorable'
+WHEN expresult >=13 and expresult <= 25 THEN 'Favorable'
+WHEN expresult >=1 and expresult <= 13 THEN 'Less Favorable'
+ELSE 'Unfavorable' 
+END as finalresult
+from
+(
+select x.location_id as locid,x.recdate as recdate,case when x.air_temp_avg_night_c='Unfavorable' then 'Unfavorable' else 54.701 * (1.6546 * exp(-6.84246 * (pow(((x.air_temp_avg_night_c - 19.4871) / 24.6295),2) + pow(((x.lwd_1212_h - 20.9021) / 42.1387),2)))) -11.763 end as expresult from
+(select location_id,to_date(record_date) as recdate,
+case
+when (air_temp_avg_night_c >= 15 and air_temp_avg_night_c <= 27) and lwd_1212_h >= 6 then air_temp_avg_night_c
+else 'Unfavorable'
+END as air_temp_avg_night_c,lwd_1212_h from mv_weather_daily_data where location_id=7105 and to_date(record_date)='2016-12-16')x
+)y;
+
+
+Postgre plsql
+--------------
+BEGIN TRANSACTION;
+DO $dd$
+  DECLARE 
+    v_result varchar(200);
+     p_in_date timestamp with time zone;
+    p_in_interval integer;
+    p_in_frequency character varying(25);
+    dyn_sql character varying(200);
+  BEGIN 
+                  p_in_date :='2016-12-13 13:31:30.780071';
+                  p_in_interval:='24';
+                  p_in_frequency:='hour';
+                    dyn_sql := concat('SELECT to_timestamp(''',p_in_date,''',''YYYY-MM-DD HH24:MI:SS'')+interval ''', p_in_interval,' ',p_in_frequency,''''); 
+                    raise notice '%',dyn_sql;
+  END; 
+$dd$;
+commit;
+
+
+df methods
+-----
+dfs.printSchema()  -- to print schema
+
+
+unix folders
+------------------
+[hadoop@ip-10-134-22-52 RuleEngine]$ ls -ltr
+total 8
+-rw-rw-r-- 1 hadoop hadoop 2145 Dec 19 16:17 model5.hql
+-rw-rw-r-- 1 hadoop hadoop  130 Dec 19 16:20 model_result_prediction.ksh
+
+
+hive beeline
+-----------------
+ 
+
+beeline -u jdbc:hive2://localhost:10000/default -n hadoop@ip-10-134-22-52.eu-central-1.compute.internal -d org.apache.hive.jdbc.HiveDriver -e "select x1.location_id as location_id,x1.recdate as recdate,round(x1.avg_air_temp_avg_night_c) as avg_air_temp_avg_night_c,round(x1.sum_lwd_1212_h) as sum_lwd_1212_h from (select location_id,"2016-12-24" as recdate,coalesce(avg(air_temp_avg_night_c),0) as avg_air_temp_avg_night_c,coalesce(sum(lwd_1212_h),0) as sum_lwd_1212_h from weatherdata.mv_weather_daily_data where to_date(record_date) >= date_sub(to_date('2016-12-24'), 2) and to_date(record_date) <= to_date('2016-12-24') group by location_id)x1"
+
+
+beeline hive script execution
+--------------------------------
+beeline -u jdbc:hive2://localhost:10000/default -n hadoop@ip-10-134-22-52.eu-central-1.compute.internal -d org.apache.hive.jdbc.HiveDriver -hiveconf aggFunction=avg -hiveconf aggFunColumn=air_temp_avg_night_c -hiveconf database=weatherdata -hiveconf tableName=mv_weather_daily_data -hiveconf  passedDate=2016-12-28 -hiveconf timeFrom=-1 -hiveconf  timeTo=0 -f calculate_rules.hql
+
+hive column header
+--------------------
+SET hive.cli.print.header=true;
+
+
+oozie
+--------------
+oozie job -config /home/hadoop/RuleEngine/properties/job.properties -run
+
+
+webui 
+-----
+Resource Manager	http://ec2-52-59-244-213.eu-central-1.compute.amazonaws.com:8088/
+HDFS Name Node	http://ec2-52-59-244-213.eu-central-1.compute.amazonaws.com:50070/
+Node Manager	http://ec2-000-000-000-000.compute-1.amazonaws.com:8042/
+HDFS Data Node	http://ec2-000-000-000-000.compute-1.amazonaws.com:50075/
+
+hadoop root user
+-----------------
+sudo bash
+
+cronjob setup
+-------------
+[hadoop@ip-10-134-22-52 logs]$ crontab -l
+30 9 31 12 6 bash /home/hadoop/RuleEngine/scripts/rule_processor_oozie_working.ksh
+
+to update or add new crontab command:
+crontab -e
+
+
+sqoop view import from different schema
+-----------------------------------------
+prod:
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_PROD  --username weatheruser --password w28ther! --table mv_weather_daily_data --hive-overwrite --hive-import --hive-table weatherdata.mv_weather_daily_data_table -m 1 -- --schema df_rule_processor
+
+qa:
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --table mv_weather_daily_data --hive-overwrite --hive-import --hive-table weatherdata.mv_weather_daily_data_table -m 1 -- --schema df_rule_processor
+
+converting view as table:
+----------------------------
+create table mv_weather_daily_data_temp as select * from mv_weather_daily_data
+
+beeline -u jdbc:hive2://localhost:10000/default -n hadoop@ip-10-134-22-52.eu-central-1.compute.internal -d org.apache.hive.jdbc.HiveDriver -e "insert overwrite table weatherdata.mv_weather_daily_data_temp select * from weatherdata.mv_weather_daily_data"
+
+insert overwrite table weatherdata.mv_weather_daily_data_temp select * from weatherdata.mv_weather_daily_data
+
+
+
+
+
+job kill
+-----------
+yarn application -list
+
+yarn application -kill $ApplicationId
+
+xref table load
+---------------
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --table model_country_xref --hive-overwrite --hive-import --hive-table weatherdata.model_country_xref -m 1 -- --schema df_rule_processor
+
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --table model_location_xref --hive-overwrite --hive-import --hive-table weatherdata.model_location_xref -m 1 -- --schema df_rule_processor
+
+
+Replacing a word in all files unix
+----------------------------------------
+find . -type f -exec sed -i 's/ip-10-134-22-8/ip-10-134-22-52/g' {} +
+
+
+find . -type f -exec sed -i 's/ip-10-134-22-52/ip-10-134-22-52/g' {} +
+
+find . -type f -exec sed -i 's/ip-10-134-22-52/ip-10-134-22-48/g' {} +
+
+Postgre backup and restore in windows cmd prompt
+------------------------------------------------
+bkup:
+pg_dump  -h rds-qa-001.df.local -p 5432 -U MD_ADMIN_USR_DEV  --no-owner --no-acl -f  D:\Users\emisx\DBBackup\md_restore.sql BCS_DF_MD_DEV
+
+table backup:
+.\pg_dump  -h by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com -p 5432 -U weatheruser  --no-owner --no-acl -f C:\Users\emmoc\Desktop\temp\public.sql -t location_id_seq1 -t public.location BCS_DF_WEATHERDB_QA
+
+
+
+
+
+restore:
+.\psql -f D:\common_sf\df_rule_processor_schema_backup\export.sql -d BCS_DF_HADOOP_QA -U weatheruser -h rds-qa-001.df.local 
+
+table restore:
+.\psql -f C:\Users\emmoc\Desktop\temp\public.sql -d BCS_DF_HADOOP_QA -U weatheruser -h by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com -p 5432
+
+huge data check:
+.\psql -f C:\Users\emmoc\Desktop\Vinay\huge_queries.sql -d BCS_DF_HADOOP_QA -U weatheruser -h by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com -p 5432
+
+
+.\psql -f C:\Users\emmoc\Desktop\Vinay\huge_queries.sql -d BCS_DF_HADOOP_QA -U weatheruser -h by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com -p 5432
+
+Unix processes with commands
+--------------------------------
+ps -ef | grep psql
+
+
+sqoop load with requried delimiter 
+----------------------------------------
+hadoop fs -rmr -skipTrash /poc/hive/weatherdata/model_rule_priority_map
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --query 'SELECT * FROM df_rule_processor.model_rule_priority_map where $CONDITIONS' --target-dir /poc/hive/weatherdata/model_rule_priority_map --split-by model_id --fields-terminated-by ':'
+
+
+Unix Command to check free memory
+---------------------------------
+free
+
+to check used memory:
+free | awk 'FNR == 3 {print $3/($3+$4)*100}'
+to check free memory:
+free | awk 'FNR == 3 {print $4/($3+$4)*100}' 
+
+
+mailing in unix
+----------------
+printf "Hadoop Rule Engine process is completed. \n\nBelow are the details:\n\nModel ID: $modelID \nDate: $runDate \nTime: $SECONDS sec" | mail -s "Model $modelID Completed" vinaykumar.dudi.ext@bayer.com
+
+
+cronttab non huge
+------------------
+00 6 * 01 *  bash /home/hadoop/RuleEngine/scripts/pre_rule_process.ksh
+10 6 * 01 *  bash /home/hadoop/RuleEngine/scripts/rule_processor_engine_nonhuge.ksh 4
+10 6 * 01 *  bash /home/hadoop/RuleEngine/scripts/rule_processor_engine_nonhuge.ksh 2
+10 9 * 01 *  bash /home/hadoop/RuleEngine/scripts/prediction_comparision.ksh
+
+
+bash /home/hadoop/RuleEngine/scripts/delete_existing.ksh 2
+bash /home/hadoop/RuleEngine/scripts/delete_existing.ksh 3
+bash /home/hadoop/RuleEngine/scripts/delete_existing.ksh 3
+bash /home/hadoop/RuleEngine/scripts/rule_processor_engine_nonhuge.ksh 2 & bash /home/hadoop/RuleEngine/scripts/rule_processor_engine_nonhuge.ksh 3 & bash /home/hadoop/RuleEngine/scripts/rule_processor_engine_nonhuge.ksh 4
+bash /home/hadoop/RuleEngine/scripts/prediction_comparision.ksh 2
+bash /home/hadoop/RuleEngine/scripts/prediction_comparision.ksh 3
+bash /home/hadoop/RuleEngine/scripts/prediction_comparision.ksh 4
+
+
+crontab huge
+-------------
+bash /home/hadoop/RuleEngine/scripts/pre_rule_process_huge.ksh
+bash /home/hadoop/RuleEngine/scripts/rule_processor_engine_huge_wrkng.ksh 4
+bash /home/hadoop/RuleEngine/scripts/rule_processor_engine_huge_wrkng.ksh 2
+
+bash /home/hadoop/RuleEngine/scripts/delete_existing_huge.ksh
+bash /home/hadoop/RuleEngine/scripts/rule_processor_engine_huge.ksh 4 & bash /home/hadoop/RuleEngine/scripts/rule_processor_engine_huge.ksh 2 & bash /home/hadoop/RuleEngine/scripts/rule_processor_engine_huge.ksh 3
+bash /home/hadoop/RuleEngine/scripts/prediction_comparision_huge.ksh 2
+
+addding a charactor at the begining of a line unix
+--------------------------------------------------------
+hadoop fs -cat /poc/hive/weatherdata/model_rule_priority_map/* | sed 's/^/M/'
+
+
+incrementing variable in unix
+*----------------------------
+var=$((var+1))
+
+
+raplacing delimiter with ctrl+A in unix-
+--------------------------------------
+cat file1 | sed -e 's/\t/\x01/g' >file1.txt
+
+unix command to clear system ram and cache
+-------------------------------------------
+echo 3 > /proc/sys/vm/drop_caches && swapoff -a && swapon -a && printf '\n%s\n' 'Ram-cache and Swap Cleared'
+
+
+RV input tables sqoop import
+----------------------------
+PROD:
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_BR_RV_PROD  --username weatheruser --password w28ther! --table weather_data_daily --hive-overwrite --hive-import --hive-table weatherdata_part_rv.weather_data_daily -m 1 -- --schema df_rv_rule_engine
+
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_BR_RV_PROD  --username weatheruser --password w28ther! --table model_location_xref --hive-overwrite --hive-import --hive-table weatherdata_part_rv.model_location_xref -m 1 -- --schema df_rv_rule_engine
+
+
+QA:
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_BR_RV_QA  --username weatheruser --password w28ther! --table weather_data_daily --hive-overwrite --hive-import --hive-table weatherdata_rv.weather_data_daily -m 1 -- --schema df_rv_rule_engine
+
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_BR_RV_QA  --username weatheruser --password w28ther! --table model_location_xref --hive-overwrite --hive-import --hive-table weatherdata_rv.model_location_xref -m 1 -- --schema df_rv_rule_engine
+
+model_priority_map table load with required delimiter
+-----------------------------------------------------
+hadoop fs -rmr -skipTrash /poc/hive/weatherdata_rv/model_rule_priority_map
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_BR_RV_QA  --username weatheruser --password w28ther! --query 'SELECT * FROM df_rv_rule_engine.model_rule_priority_map where $CONDITIONS' --target-dir /poc/hive/weatherdata_rv/model_rule_priority_map --split-by model_id --fields-terminated-by ':'
+hadoop fs -cat /poc/hive/weatherdata_rv/model_rule_priority_map/* | sed 's/^/M/' | sed 's/null//g' > model_rule_priority_map_rv.config
+
+
+changes in for each model
+----------------------------
+1. need to add one entry for variables in model_variables.config
+3. models_prediction_conditions.config - need to add conditions for variables
+
+sqoop import for hourly model dffarming
+----------------------------------------
+sqoop import --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA  --username weatheruser --password w28ther! --table mv_weather_spray_hourly_data --hive-overwrite --hive-import --hive-table weatherdata.mv_weather_spray_hourly_data -m 1 -- --schema df_rule_processor
+
+skipping last few charactors of string in bash
+------------------------------------------------
+CaseConditionOR=${CaseConditionOR::-1}
+
+
+hadoop command to get the blocksize
+-------------------------------------
+ hdfs getconf -confKey dfs.blocksize
+
+Memory optimization params hadoop 
+-------------------------------
+set mapreduce.map.memory.mb=5120;
+set mapreduce.map.java.opts=-Xmx4608m;
+set mapreduce.reduce.memory.mb=5120;
+set mapreduce.reduce.java.opts=-Xmx4608m;
+set hive.tez.container.size=2048;
+set hive.tez.java.opts=-Xmx2048m;
+set dfs.blocksize=256m;
+
+to view param value
+------------------
+set mapreduce.map.memory.mb=5120;
+set mapreduce.map.java.opts=-Xmx4608m;
+set mapreduce.reduce.memory.mb=5120;
+set mapreduce.reduce.java.opts=-Xmx4608m;
+set hive.tez.container.size=2048;
+set hive.tez.java.opts=-Xmx2048m;
+set dfs.blocksize=256m;
+
+
+git url 
+---------
+https://bitbucket.digital-farming.com/projects/
+
+
+
+aws emr cluster running services status
+---------------------------------------
+initctl list
+
+status check of each service:
+status hadoop-yarn-resourcemanager
+
+
+aws emr namenode and datanode restart
+----------------------------------------
+sudo service hadoop-hdfs-namenode restart
+ssh -i <key.pem> <hostname1> "sudo service hadoop-hdfs-datanode restart"
+ssh -i <key.pem> <hostname2> "sudo service hadoop-hdfs-datanode restart"
+ssh -i <key.pem> <hostname3> "sudo service hadoop-hdfs-datanode restart"
+
+
+javax security exception
+------------------------
+add below line in the file $JAVA_HOME/lib/security/java.policy 
+
+    permission javax.management.MBeanTrustPermission "register";
+	
+	
+	
+tez ui
+------------
+http://ip-10-134-22-52.eu-central-1.compute.internal:8080/tez-ui/#/
+
+
+
+git commands 
+-------------
+1. select the folder to which version control is requried
+
+2. cd <folder>
+
+3. git init 
+
+4. git add ./git add */git add <filename>
+
+5. git commit -m "message"
+
+6. Adding bitbucket repository using below command
+
+       git remote add origin https://EMMOC@bitbucket.digital-farming.com/scm/dfpoc/dfpoc-rule-engine.git
+	   
+7.   use below to get status
+
+     git remote -v
+	 
+8. git push origin master (if any issue, pull first using "git pull orgin master")
+
+
+general git changes
+---------------------
+1. check status about changed stuff first 
+
+    git status
+2. if any use below
+      git add <filename>
+	  git commit -m <filename>
+	  
+3. git status
+
+4. git push origin master	  
+
+
+adding other remote map master current git dir
+---------------------------------------------
+Go to current directory, which you want to map to remote master, and then follow below.
+
+1. git clone <url>
+2. copy ".git" folder from cloned dir to current direcotry
+    cp <urldir>/.git .
+   
+3. delete clone folder
+     rm -rf <urldir>
+   
+4. git add .
+5. git commit -m "Initial Commit"
+6. git push origin master
+	 
+vcores usage:
+===========
+yarn.nodemanager.resource.cpu-vcores - Number of CPU cores that can be allocated for containers.
+
+mapreduce.map.cpu.vcores - The number of virtual CPU cores allocated for each map task of a job
+
+mapreduce.reduce.cpu.vcores - The number of virtual CPU cores for each reduce task of a job
+
+ignoring verbose in spark
+------------------------
+You may find the logging statements that get printed in the shell distracting. You can control the verbosity of the logging. To do this, you can create a file in the conf directory called log4j.properties. The Spark developers already include a template for this file called log4j.properties.template. To make the logging less verbose, make a copy of conf/log4j.properties.template called conf/log4j.properties and find the following line:
+
+log4j.rootCategory=INFO, console
+
+Then lower the log level so that we only show WARN message and above by changing it to the following:
+
+log4j.rootCategory=WARN, console
+
+When you re-open the shell, you should see less output.
+
+
+going back to old commit in git
+---------------------------------
+method1
+--------
+git log <filename>
+
+to check diff between old commit and latest :
+git diff <old commit id> <latest file>
+
+git checkout <commit id> <filename>
+
+method 2
+---------
+git log
+ --to get commit ids
+ 
+git reset --hard <commitid> && git clean -f
+  -- Exactly go old commit by deleting all changes happend afterwards 
+to immediate previous commit:
+  git reset --hard HEAD
+ 
+ 
+another way:
+git revert --no-commit 0766c053..HEAD
+git commit
+
+
+kill multiple process unix
+-------------------------
+for pid in $(ps -ef | grep "RuleEngine" | awk '{print $2}'); do kill -9 $pid; done
+
+for appID in $(yarn application -list | grep TEZ | awk -F' ' '{print $1}'); do yarn application -kill $appID; done
+
+
+sqoop export
+----------------
+Note: Table should be there in destination DB to export. Sqoop can't create new table through export.
+
+sqoop export --connect jdbc:postgresql://by-df-rds-pgsql-qa-001.ceasaoaqftxu.eu-central-1.rds.amazonaws.com:5432/BCS_DF_WEATHERDB_QA --username weatheruser --password w28ther! --table mv_weather_spray_hourly_data_test --input-fields-terminated-by '\001' --input-lines-terminated-by '\n' --num-mappers 8 --input-null-string '\\N' --input-null-non-string '\\N' --export-dir /poc/hive/weatherdata_part_rv/mv_weather_spray_hourly_data_test -- --schema df_rule_processor
+
+
+bash /home/hadoop/RuleEngine/scripts/run_parallel_models_part_nrv_hour.ksh
+
+
+history commands with time
+--------------------------
+HISTTIMEFORMAT="%d/%m/%y %T "
+history
+
+
+
+one note tams prediction service
+--------------------------------
+[?22-?03-?2017 12:22] Santosh Bharadwaj: 
+Dev-guideline (Web view),  Dev-guideline (OneNote) 
+
+http://sp-coll-bcs.bayer-ag.com/sites/453509/SP/_layouts/15/WopiFrame2.aspx?sourcedoc=%2Fsites%2F453509%2FSP%2FNotebook%2FDev%2Dguideline&action=edit
+
+
+
+hive databases creation
+-----------------------
+create database weatherdata_part_rv LOCATION "/poc/hive/weatherdata_part_rv";
+create database weatherdata_part_nrv LOCATION "/poc/hive/weatherdata_part_nrv";
+
+
+
+Hue login
+---------
+uname: emmoc
+pwd: Bigdata@2017
+
+
+s3 migration
+--------------
+create database weatherdata_rv LOCATION "s3://aws-logs-238683320570-eu-central-1/elasticmapreduce/hive/weatherdata_rv";
+create database weatherdata_nrv LOCATION "s3://aws-logs-238683320570-eu-central-1/elasticmapreduce/hive/weatherdata_nrv";
+
+
+CREATE TABLE `record_count`(
+  `model_id` string,
+  `no_of_records` bigint,
+  `record_insert_ts` timestamp)
+ROW FORMAT SERDE
+  'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
+STORED AS INPUTFORMAT
+  'org.apache.hadoop.mapred.TextInputFormat'
+OUTPUTFORMAT
+  'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+LOCATION
+  's3://aws-logs-238683320570-eu-central-1/elasticmapreduce/hive/weatherdata_nrv/record_count';  
+  
+  
+yarn temp location cache
+----------------------------
+/mnt/var/lib/hadoop/tmp/yarn/timeline/leveldb-timeline-store.ldb
+
+clean above directory frequently to avoid space issues.
+
+
+
+windows to unix files movement
+-----------------------------
+You can do with cygwin
+
+1. Make sure cygwin is installed
+2. Get ready with .pem file of unix machine
+3. Run below command in cygwin shell from windows, and here it works like charm
+
+scp -i C:/Users/emmoc/Desktop/Vinay/putty/aws-ncbi.pem C:/Users/emmoc/Desktop/OR.txt hadoop@10.134.22.48:/home/hadoop/RuleEngine
+
+
+hive jars path
+-----------------
+/usr/lib/hive/lib
+
+
+
+hive2 jdbc classpath
+----------------------
+java -cp /home/hadoop/RuleEngine/test/hivejdbc.jar:/usr/lib/hive/jdbc/*:/usr/lib/hive/lib/*:/etc/hadoop/conf:/usr/lib/hadoop/lib/*:/usr/lib/hadoop/.//*:/usr/lib/hadoop-hdfs/./:/usr/lib/hadoop-hdfs/lib/*:/usr/lib/hadoop-hdfs/.//*:/usr/lib/hadoop-yarn/lib/*:/usr/lib/hadoop-yarn/.//*:/usr/lib/hadoop-mapreduce/lib/*:/usr/lib/hadoop-mapreduce/.//*::/etc/tez/conf:/usr/lib/tez/*:/usr/lib/tez/lib/*:/usr/lib/hadoop-lzo/lib/*:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/usr/share/aws/emr/ddb/lib/emr-ddb-hadoop.jar:/usr/share/aws/emr/goodies/lib/emr-hadoop-goodies.jar:/usr/share/aws/emr/kinesis/lib/emr-kinesis-hadoop.jar:/usr/share/aws/emr/cloudwatch-sink/lib/*:/usr/share/aws/emr/security/conf:/usr/share/aws/emr/security/lib/* JDBCTest
+
+Run below code by converting as jar, with above command.
+
+Hive JDBC code
+--------------
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+public class JDBCTest {
+	/*
+	 * 
+	 * Before Running this example we should start thrift server. To Start
+	 * Thrift server we should run below command in terminal 
+	 * hive --service hiveserver &
+	 */
+	private static String driverName = "org.apache.hive.jdbc.HiveDriver";
+
+	public static void main(String[] args) throws SQLException {
+		try {
+			Class.forName(driverName);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+
+		Connection con = DriverManager.getConnection(
+				"jdbc:hive2://localhost:10000/default", "", "");
+		Statement stmt = con.createStatement();
+
+		System.out.println("Connection established");
+	
+		ResultSet res = stmt.executeQuery("select * from weatherdata_part_rv.location_model_prediction limit 10");
+
+		// show tables
+		
+		while (res.next()) {
+			System.out.println(res.getString(1));
+		}
+
+	   
+		res.close();
+		stmt.close();
+		con.close();
+	}
+}
+
+
+
+loading windows file to unix using shell command command
+---------------------------------------------------------
+1. select a folder which you want to share in windows
+
+2. right and provide sharing capability
+
+3. Note the network path
+
+ ex:  \\BY-DF162\export
+ 
+4. Run below command in unix 
+  
+  sy: mount -t cifs -o user=<username> <windows shared path> <unix path>
+  mount -t cifs -o user=emmoc //by-df162.df.local/export /mnt/windows
+                                                          
+ref link:  https://www.cyberciti.biz/faq/linux-mount-cifs-windows-share/
+
+5. Provide credentials 
+
+6. from all files which are in //by-df162.df.local/export will be available in /mnt/windows.
+
+
+
+swithcing to branches in git
+-----------------------------
+1. select the folder
+
+2. git init
+
+3. git clone <url>
+
+   git clone https://EMMOC@bitbucket.digital-farming.com/scm/dftams/dftams-backend-contracts.git
+   
+4. A folder name will be created with repository name. 
+
+5. cd <repository folder>
+
+   cd DFTAMS-backend-contracts
+
+6. git checkout <branchname>
+
+   git checkout develop
